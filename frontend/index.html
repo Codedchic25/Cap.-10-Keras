@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriVision AI Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .sub-header {
+            color: #7f8c8d;
+        }
+
+        .upload-box {
+            border: 2px dashed #3498db;
+            padding: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fcfdfd;
+            transition: 0.3s;
+        }
+
+        .upload-box:hover {
+            background: #f2f8fc;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        #preview {
+            max-width: 150px;
+            margin-top: 20px;
+            border-radius: 6px;
+            display: none;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .result-card {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 5px solid #2ecc71;
+            border-radius: 4px;
+            text-align: left;
+            display: none;
+        }
+
+        .result-card h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+
+        .class-badge {
+            color: #2ecc71;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            margin-top: 15px;
+        }
+
+        .chart-title {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .bar-row {
+            margin-bottom: 10px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: capitalize;
+            margin-bottom: 4px;
+        }
+
+        .bar-bg {
+            background: #e0e0e0;
+            border-radius: 4px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            background: #3498db;
+            height: 100%;
+            width: 0%;
+            transition: width 0.6s ease-out;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🌾 AgriVision AI Classifier</h1>
+        <p class="sub-header">Încarcă o imagine cu un fruct pentru analiză în timp real</p>
+
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <span id="uploadText">Click pentru a selecta o imagine</span>
+            <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+        </div>
+
+        <img id="preview" src="#" alt="Preview">
+        <button class="btn" onclick="sendToPredictAPI()">Rulează Predicția Keras</button>
+
+        <div class="result-card" id="resultCard">
+            <h3>📊 Rezultat Analiză:</h3>
+            <p><strong>Clasa Detectată:</strong> <span id="resClass" class="class-badge">-</span></p>
+            <p><strong>Scor Confidență:</strong> <span id="resConf">-</span></p>
+
+            <div class="chart-container">
+                <span class="chart-title">Distribuția Probabilităților:</span>
+
+                <div class="bar-row">
+                    <div class="bar-label"><span>🍌 Banane</span><span id="val-banane">0%</span></div>
+                    <div class="bar-bg">
+                        <div id="bar-banane" class="bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="bar-row">
+                    <div class="bar-label"><span>🍏 Mere</span><span id="val-mere">0%</span></div>
+                    <div class="bar-bg">
+                        <div id="bar-mere" class="bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="bar-row">
+                    <div class="bar-label"><span>🍊 Portocale</span><span id="val-portocale">0%</span></div>
+                    <div class="bar-bg">
+                        <div id="bar-portocale" class="bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const input = event.target;
+            if (!input.files || input.files.length === 0) return;
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                const preview = document.getElementById('preview');
+                preview.src = reader.result;
+                preview.style.display = 'block';
+                document.getElementById('uploadText').innerText = input.files[0].name;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        async function sendToPredictAPI() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Te rog selectează o imagine mai întâi!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            try {
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    document.getElementById('resultCard').style.display = 'block';
+                    document.getElementById('resClass').innerText = data.predicted_class;
+                    document.getElementById('resConf').innerText = (data.confidence * 100).toFixed(2) + "%";
+
+                    if (data.distribution) {
+                        for (const [fruct, valoare] of Object.entries(data.distribution)) {
+                            const procent = (valoare * 100).toFixed(1) + "%";
+                            const txtElement = document.getElementById(`val-${fruct}`);
+                            const barElement = document.getElementById(`bar-${fruct}`);
+
+                            if (txtElement && barElement) {
+                                txtElement.innerText = procent;
+                                barElement.style.width = procent;
+                            }
+                        }
+                    }
+                } else {
+                    alert('Eroare API: ' + data.error_message);
+                }
+            } catch (error) {
+                alert('Nu s-a putut conecta la serverul Flask. Asigură-te că app.py rulează!');
+            }
+        }
+    </script>
+
+</body>
+
+</html>

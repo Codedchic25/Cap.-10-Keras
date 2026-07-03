@@ -1,0 +1,29 @@
+﻿# Mediul virtual creat de uv (contine giga de librarii)
+.venv/
+.rocks/
+
+# Cache-ul intern Python si TensorFlow
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Directoarele cu loguri grele generate in timpul antrenarilor
+logs/
+keras_tuner_dir/
+
+# Setarile locale si secretele editorului VS Code
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Fisierele temporare generate de Windows in foldere
+Thumbs.db
+ehthumbs.db
+Desktop.ini
